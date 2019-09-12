@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -22,11 +22,12 @@ sys.path.append(os.path.join(os.path.dirname(os.getcwd()), "pore_utils"))
 import pore_segmenter
 from batch_segmentation_hmm_dask import *
 import plot_captures
+
+sys.path.append(os.path.dirname(os.getcwd()))
 from pore_utils import raw_signal_utils
 from pore_utils import peptide_segmentation as pepseg
 from pore_utils.yaml_assistant import YAMLAssistant
 
-sys.path.append(os.path.dirname(os.getcwd()))
 import peptide_filter_utils as pepfilter
 from NTER_CNN import *
 

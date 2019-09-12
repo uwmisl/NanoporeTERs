@@ -163,7 +163,8 @@ print f5_files_by_flowcell
 
 prefixes_by_flowcell = dict.fromkeys(flowcells)
 for flowcell in flowcells:
-    prefixes_by_flowcell[flowcell] = re.findall(r"(.*_)run_\d+_\d+.fast5", f5_files_by_flowcell[flowcell][0])[0]
+    if f5_files_by_flowcell[flowcell]:
+        prefixes_by_flowcell[flowcell] = re.findall(r"(.*_)run_\d+_\d+.fast5", f5_files_by_flowcell[flowcell][0])[0]
 
 
 # In[14]:
@@ -181,7 +182,8 @@ print prefixes_by_flowcell
 
 config_files_by_flowcell = dict.fromkeys(flowcells)
 for flowcell in flowcells:
-    config_files_by_flowcell[flowcell] = "configs/segment_%s_%s.yml" % (date, flowcell)
+    if f5_files_by_flowcell[flowcell]:
+        config_files_by_flowcell[flowcell] = "configs/segment_%s_%s.yml" % (date, flowcell)
 
 
 # ## Print example config file(s)
@@ -190,66 +192,12 @@ for flowcell in flowcells:
 
 
 for flowcell in flowcells:
-    print "fast5:"
-    print "  dir: %s/" % os.path.join(f5_base_dir, f5_dir)
-    print "  prefix: %s" % prefixes_by_flowcell[flowcell]
-    print "  names:"
-    for run, df in runs_by_date.iteritems(): 
-        if df.iloc[0]["Flow Cell"] != flowcell:
-            continue
-        run_name = re.findall(r"run_(\d+)", run)[0]
-        for f5_fname in f5_files_by_flowcell[flowcell]:
-            try:
-                if "run_%s" % run_name in re.findall(r"(run_\d+_\d+.fast5)", f5_fname)[0]:
-                    r = re.findall(r"(run_\d+_\d+.fast5)", f5_fname)[0]
-                    print "    run%s: %s" % (run_name, r)
-            except IndexError:
-                pass
-    print "  run_splits:"
-    formatted_coords = {}
-    for run, df in runs_by_date.iteritems(): 
-        if df.iloc[0]["Flow Cell"] != flowcell:
-            continue
-        formatted_coords[run] = [] 
-        r = re.findall(r"run_(\d+)", run)
-        print "    run%s:" % r[0]
-        mod = 0
-        for i, coords in enumerate(df.loc[:, ["start (sec)", "end (sec)"]].iterrows()):
-            letter = alpha[i - mod]
-            if np.isnan(coords[1][0]):
-                mod += 1
-                continue
-            else:
-                start = int(coords[1][0])
-            if np.isnan(coords[1][1]):
-                end = start + 100
-            else:
-                end = int(coords[1][1])
-            print "    - name: %s" % letter
-            print "      start: %d" % start
-            print "      end: %d" % end
-            formatted_coords[run].append({"name": letter, "start": start, "end": end})
-    print "segmentation_params:"
-    print "  out_prefix: /disk1/pore_data/segmented/peptides/%s" % date
-    print "  min_duration_obs:", min_duration_obs
-    print "  signal_threshold:", signal_threshold
-    print "  signal_priors:"
-    print "    prior_open_pore_mean:", open_pore_mean
-    print "    prior_open_pore_std:", open_pore_stdv
-
-
-# ## Write to config file(s)
-
-# In[17]:
-
-
-for flowcell in flowcells:
-    with open(config_files_by_flowcell[flowcell], "w+") as f:
-        f.write("fast5:\n")
-        f.write("  dir: %s\n" % os.path.join(f5_base_dir, f5_dir))
-        f.write("  prefix: %s\n" % prefixes_by_flowcell[flowcell])
-        f.write("  names:\n")
-        for run, df in runs_by_date.iteritems():
+    if f5_files_by_flowcell[flowcell]:
+        print "fast5:"
+        print "  dir: %s/" % os.path.join(f5_base_dir, f5_dir)
+        print "  prefix: %s" % prefixes_by_flowcell[flowcell]
+        print "  names:"
+        for run, df in runs_by_date.iteritems(): 
             if df.iloc[0]["Flow Cell"] != flowcell:
                 continue
             run_name = re.findall(r"run_(\d+)", run)[0]
@@ -257,17 +205,17 @@ for flowcell in flowcells:
                 try:
                     if "run_%s" % run_name in re.findall(r"(run_\d+_\d+.fast5)", f5_fname)[0]:
                         r = re.findall(r"(run_\d+_\d+.fast5)", f5_fname)[0]
-                        f.write("    run%s: %s\n" % (run_name, r))
+                        print "    run%s: %s" % (run_name, r)
                 except IndexError:
                     pass
-        f.write("  run_splits:\n")
+        print "  run_splits:"
         formatted_coords = {}
-        for run, df in runs_by_date.iteritems():
+        for run, df in runs_by_date.iteritems(): 
             if df.iloc[0]["Flow Cell"] != flowcell:
                 continue
             formatted_coords[run] = [] 
             r = re.findall(r"run_(\d+)", run)
-            f.write("    run%s:\n" % r[0])
+            print "    run%s:" % r[0]
             mod = 0
             for i, coords in enumerate(df.loc[:, ["start (sec)", "end (sec)"]].iterrows()):
                 letter = alpha[i - mod]
@@ -280,17 +228,73 @@ for flowcell in flowcells:
                     end = start + 100
                 else:
                     end = int(coords[1][1])
-                f.write("    - name: %s\n" % letter)
-                f.write("      start: %d\n" % start)
-                f.write("      end: %d\n" % end)
+                print "    - name: %s" % letter
+                print "      start: %d" % start
+                print "      end: %d" % end
                 formatted_coords[run].append({"name": letter, "start": start, "end": end})
-        f.write("segmentation_params:\n")
-        f.write("  out_prefix: /disk1/pore_data/segmented/peptides/%s\n" % date)
-        f.write("  min_duration_obs: %d\n" % min_duration_obs)
-        f.write("  signal_threshold: %f\n" % signal_threshold)
-        f.write("  signal_priors:\n")
-        f.write("    prior_open_pore_mean: %f\n" % open_pore_mean)
-        f.write("    prior_open_pore_std: %f\n" % open_pore_stdv)
+        print "segmentation_params:"
+        print "  out_prefix: /disk1/pore_data/segmented/peptides/%s" % date
+        print "  min_duration_obs:", min_duration_obs
+        print "  signal_threshold:", signal_threshold
+        print "  signal_priors:"
+        print "    prior_open_pore_mean:", open_pore_mean
+        print "    prior_open_pore_std:", open_pore_stdv
+
+
+# ## Write to config file(s)
+
+# In[17]:
+
+
+for flowcell in flowcells:
+    if f5_files_by_flowcell[flowcell]:
+        with open(config_files_by_flowcell[flowcell], "w+") as f:
+            f.write("fast5:\n")
+            f.write("  dir: %s\n" % os.path.join(f5_base_dir, f5_dir))
+            f.write("  prefix: %s\n" % prefixes_by_flowcell[flowcell])
+            f.write("  names:\n")
+            for run, df in runs_by_date.iteritems():
+                if df.iloc[0]["Flow Cell"] != flowcell:
+                    continue
+                run_name = re.findall(r"run_(\d+)", run)[0]
+                for f5_fname in f5_files_by_flowcell[flowcell]:
+                    try:
+                        if "run_%s" % run_name in re.findall(r"(run_\d+_\d+.fast5)", f5_fname)[0]:
+                            r = re.findall(r"(run_\d+_\d+.fast5)", f5_fname)[0]
+                            f.write("    run%s: %s\n" % (run_name, r))
+                    except IndexError:
+                        pass
+            f.write("  run_splits:\n")
+            formatted_coords = {}
+            for run, df in runs_by_date.iteritems():
+                if df.iloc[0]["Flow Cell"] != flowcell:
+                    continue
+                formatted_coords[run] = [] 
+                r = re.findall(r"run_(\d+)", run)
+                f.write("    run%s:\n" % r[0])
+                mod = 0
+                for i, coords in enumerate(df.loc[:, ["start (sec)", "end (sec)"]].iterrows()):
+                    letter = alpha[i - mod]
+                    if np.isnan(coords[1][0]):
+                        mod += 1
+                        continue
+                    else:
+                        start = int(coords[1][0])
+                    if np.isnan(coords[1][1]):
+                        end = start + 100
+                    else:
+                        end = int(coords[1][1])
+                    f.write("    - name: %s\n" % letter)
+                    f.write("      start: %d\n" % start)
+                    f.write("      end: %d\n" % end)
+                    formatted_coords[run].append({"name": letter, "start": start, "end": end})
+            f.write("segmentation_params:\n")
+            f.write("  out_prefix: /disk1/pore_data/segmented/peptides/%s\n" % date)
+            f.write("  min_duration_obs: %d\n" % min_duration_obs)
+            f.write("  signal_threshold: %f\n" % signal_threshold)
+            f.write("  signal_priors:\n")
+            f.write("    prior_open_pore_mean: %f\n" % open_pore_mean)
+            f.write("    prior_open_pore_std: %f\n" % open_pore_stdv)
 
 
 # # Generate ipython notebook(s)
@@ -301,15 +305,16 @@ for flowcell in flowcells:
 
 
 for flowcell in flowcells:
-    template_fname = "experiment_TEMPLATE.ipynb"
-    notebook_fname = "experiments/experiment_%s_%s.ipynb" % (date, flowcell)
-    with open(template_fname, "r") as template_nb:
-        lines = template_nb.readlines()
-        lines = "\n".join(lines)
-        lines = lines.replace("INSERT_DATE", date)
-        lines = lines.replace("INSERT_FLOWCELL", flowcell)
-    with open(notebook_fname, "w+") as nb:
-        nb.write(lines)
+    if f5_files_by_flowcell[flowcell]:
+        template_fname = "experiment_TEMPLATE.ipynb"
+        notebook_fname = "experiments/experiment_%s_%s.ipynb" % (date, flowcell)
+        with open(template_fname, "r") as template_nb:
+            lines = template_nb.readlines()
+            lines = "\n".join(lines)
+            lines = lines.replace("INSERT_DATE", date)
+            lines = lines.replace("INSERT_FLOWCELL", flowcell)
+        with open(notebook_fname, "w+") as nb:
+            nb.write(lines)
 
 
 # In[ ]:

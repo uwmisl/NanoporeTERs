@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[30]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -18,15 +18,16 @@ import seaborn as sns
 sns.set_style("whitegrid")
 
 import os, sys
-sys.path.append(os.path.join(os.path.dirname(os.getcwd()), "pore-utils"))
+sys.path.append(os.path.join(os.path.dirname(os.getcwd()), "pore_utils"))
 import pore_segmenter
 from batch_segmentation_hmm_dask import *
 import plot_captures
+
+sys.path.append(os.path.dirname(os.getcwd()))
 from pore_utils import raw_signal_utils
 from pore_utils import peptide_segmentation as pepseg
 from pore_utils.yaml_assistant import YAMLAssistant
 
-sys.path.append(os.path.dirname(os.getcwd()))
 import peptide_filter_utils as pepfilter
 from NTER_CNN import *
 
@@ -202,7 +203,7 @@ pepseg.parallel_find_peptides(
 
 # Saves raw capture data in `.npy` files.
 
-# In[ ]:
+# In[12]:
 
 
 pepseg.extract_raw_data(fast5_fnames_full, df_location=save_location,
@@ -215,86 +216,73 @@ pepseg.extract_raw_data(fast5_fnames_full, df_location=save_location,
 
 # # Filter and Classify Peptides
 
-# In[ ]:
+# Default classifier is CNN. To use Random Forest, change `NTER_cnn` to `NTER_rf`. To filter without classifying, change to `""`.
+# 
+# Default confidence threshold is 0.95. Saves filtered and classified capture metadata in `.csv` files.
+
+# In[18]:
 
 
-classifier_name = ""
-
-
-# Pick a classifier if applicable (CNN or Random Forest). Confidence threshold is by default set to 0.95.
-
-# In[ ]:
-
-
-classifier_name = "NTER_cnn"
-
-
-# In[ ]:
-
-
-classifier_name = "NTER_rf"
-
-
-# Saves filtered and classified capture metadata in `.csv` files.
-
-# In[ ]:
-
-
-filtered_fnames = pepfilter.filter_and_classify_peptides(date, fast5_fnames.keys(), "NTER_general", classifier_name, 
+filtered_fnames = pepfilter.filter_and_classify_peptides(date, fast5_fnames.keys(), "NTER_general", "NTER_cnn", 
                                                          conf_thresh=0.95)
 
 
 # # Quantify Peptides
 
-# In[ ]:
+# Quantify peptides via two methods: time between captures (obs) and capture frequency (# of reads/pore/min). Set `time_interval` to an integer in minutes to break run into time segments when quantifying (e.g. `time_interval=5` will make a quantification every 5 min).
+# 
+# Saves average times/frequencies for each filtered file as a dictionary in a `.json` file.
+
+# ## Time Between Captures
+
+# In[26]:
 
 
-quantified_dict = {}
-quantifier = ""
-
-
-# Pick whether to quantify peptides via time between captures (obs) or capture frequency (# of reads/pore/min). Set `time_interval` to an integer in minutes to break run into time segments when quantifying (e.g. `time_interval=5` will make a quantification every 5 min).
-
-# In[ ]:
-
-
-# Time Between Captures
-quantifier = "time"
+time_quantified_dict = {}
 for fname in filtered_fnames:
-    print fname
     time = pepquant.get_time_between_captures(fname, time_interval=None)
+    print "Time Between Captures:"
     print time
-    quantified_dict[fname] = time
+    time_quantified_dict[fname] = time
     print "Estimated Conc in uM:"
     print [pepquant.NTER_time_fit(x) for x in time]
     print
-
-
-# In[ ]:
-
-
-# Capture Frequency
-quantifier = "freq"
-for fname in filtered_fnames:
-    print fname
-    freq = pepquant.get_capture_freq(fname, time_interval=None)
-    print freq
-    quantified_dict[fname] = freq
-    print "Estimated Conc in uM:"
-    print [pepquant.NTER_freq_fit(x) for x in freq]
     print
 
 
-# Saves average times/frequencies for each filtered file as a dictionary in a `.json` file.
+# In[27]:
+
+
+json.dump(time_quantified_dict, 
+          file(os.path.join(os.path.dirname(os.getcwd()),"peptide_conc/experiment_%s_%s_time.json" % (date, flowcell)), "w"))
+
+
+# ## Capture Frequency
+
+# In[28]:
+
+
+freq_quantified_dict = {}
+for fname in filtered_fnames:
+    freq = pepquant.get_capture_freq(fname, time_interval=None)
+    print "Capture Frequency:"
+    print freq
+    freq_quantified_dict[fname] = freq
+    print "Estimated Conc in uM:"
+    print [pepquant.NTER_freq_fit(x) for x in freq]
+    print
+    print
+
+
+# In[29]:
+
+
+json.dump(freq_quantified_dict, 
+          file(os.path.join(os.path.dirname(os.getcwd()),"peptide_conc/experiment_%s_%s_freq.json" % (date, flowcell)), "w"))
+
 
 # In[ ]:
 
 
-print conc_dict
 
-
-# In[ ]:
-
-
-json.dump(conc_dict, file(os.path.join(os.path.dirname(os.getcwd()),"peptide_conc/experiment_%s_%s_%s.json" % (date, flowcell, quantifier)), "w"))
 
