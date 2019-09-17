@@ -34,12 +34,16 @@ def get_num_classes(classifier):
 def init_classifier(classifier_name):
     if classifier_name is "NTER_cnn":
         # CNN classifier trained on Y00-Y08_plusnoise
-        nanoporeTER_cnn = load_CNN("/disk1/pore_data/jeff_saved/NTERs_trained_cnn_05152019.pt")
+        classifier_path = "/disk1/pore_data/jeff_saved/NTERs_trained_cnn_05152019.pt"
+        print "Classifier: " + classifier_path
+        nanoporeTER_cnn = load_CNN(classifier_path)
         nanoporeTER_cnn.eval()
         return nanoporeTER_cnn
     elif classifier_name is "NTER_rf":
         # Random Forest classifier
-        return joblib.load(open("/disk1/pore_data/NanoporeTERs/Y00_Y08_Noise_03082019_RandomForest_model.sav", 'rb'))
+        classifier_path = "/disk1/pore_data/NanoporeTERs/Y00_Y08_Noise_03082019_RandomForest_model.sav"
+        print "Classifier: " + classifier_path
+        return joblib.load(open(classifier_path, 'rb'))
     else:
         raise Exception("Invalid classifier name")
 
@@ -52,6 +56,15 @@ def get_filter_param(filter_name):
         return [0, 0.45, 1, 0.15, 1, 0.005, 1, 0, 0.65, 20100, ""]
     else:
         raise Exception("Invalid filter name")
+        
+        
+def print_param(filter_param):
+    print "Mean: " + str((filter_param[0], filter_param[1]))
+    print "Stdv: " + str((0, filter_param[2]))
+    print "Median: " + str((filter_param[3], filter_param[4]))
+    print "Min: " + str((filter_param[5], filter_param[6]))
+    print "Max: " + str((filter_param[7], filter_param[8]))
+    print "Length: " + str(filter_param[9])
 
 
 # Returns -1 if classification probability is below confidence threshold
@@ -88,12 +101,16 @@ def classifier_predict(classifier, raw, conf_thresh):
 def filter_and_classify_peptides(date, runs, filter_name, classifier_name="", conf_thresh=0.95, 
                                  custom_fname="", rej_check=True):
     
+    filter_param = get_filter_param(filter_name)
+    print "Params for " + filter_name + " Filter:"
+    print_param(filter_param) 
+    print
+    
     if classifier_name: 
         classifier = init_classifier(classifier_name)
         print "Confidence Threshold: " + str(conf_thresh)
         print
     
-    filter_param = get_filter_param(filter_name)
     segmented_base_fname = "/disk1/pore_data/segmented/peptides/%s/%s_segmented_peptides_%s%s%s.%s" 
     
     all_filtered_files = []
