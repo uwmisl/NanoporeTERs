@@ -224,7 +224,7 @@ pepseg.extract_raw_data(fast5_fnames_full, df_location=save_location,
 
 
 filtered_fnames = pepfilter.filter_and_classify_peptides(date, fast5_fnames.keys(), "NTER_general", "NTER_cnn", 
-                                                         conf_thresh=0.95)
+                                                         conf_thresh=0.95, custom_fname="", rej_check=True)
 
 
 # # Quantify Peptides
