@@ -47,7 +47,7 @@ def get_related_files (file_name):
         print("Invalid file name")
         return
     
-    config_file_dir = "/ssd1/home/kz9/peptide-signatures/configs"
+    config_file_dir = os.path.join(os.path.dirname(os.getcwd()), "configs")
     possible_configs = [x for x in os.listdir(config_file_dir) if date in x and not "backup" in x]
     config_file = None
     for config in possible_configs:
