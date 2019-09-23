@@ -1,12 +1,11 @@
 import numpy as np
 import h5py
 import peptide_quantifier_utils as pepquant
-from sklearn.externals import joblib
+import joblib
 import os
 from NTERs_trained_cnn_05152019 import *
 import pandas as pd
 import logging
-
 import torch
 import torch.nn as nn
 import warnings
@@ -21,11 +20,13 @@ def check_capture_rejection(end_capture, voltage_ends, tol_obs=20):
     return False
 
 
-def get_num_classes(classifier):
-    if isinstance(classifier, CNN):
-        return 10  # NTER_cnn classifier has 10 classes
-    else:
+def get_num_classes(classifier, classifier_name):
+    if classifier_name == "NTER_cnn":
+        return classifier.fc2.out_features
+    elif classifier_name == "NTER_rf":
         return len(classifier.classes_)
+    else:
+        return
 
 
 # Possible classifier names: NTER_cnn, NTER_rf
@@ -68,8 +69,8 @@ def print_param(filter_param):
 
 
 # Returns -1 if classification probability is below confidence threshold
-def classifier_predict(classifier, raw, conf_thresh):
-    if isinstance(classifier, CNN):
+def classifier_predict(classifier, raw, conf_thresh, classifier_name):
+    if classifier_name == "NTER_cnn":
         X_test = np.array([raw])
         # go from 2D to 3D array (each obs in a capture becomes its own array)
         X_test = X_test.reshape(len(X_test), X_test.shape[1], 1)
@@ -159,7 +160,8 @@ def filter_and_classify_peptides(runs, date, filter_name, classifier_name="",
 
         # Apply 5 feature filters and classify
         if classifier_name:
-            captures = [[] for x in range(0, get_num_classes(classifier))]
+            captures = [[] for x in range(0, get_num_classes(classifier,
+                                                             classifier_name))]
         else:
             captures = [[]]
         non_filtered = 0
@@ -204,8 +206,10 @@ def filter_and_classify_peptides(runs, date, filter_name, classifier_name="",
                 if classifier_name:
                     # classifier uses obs 100-20100 of capture
                     raw_100_to_20100 = raw_captures[i][100:20100]
-                    class_predict = classifier_predict(
-                        classifier, raw_100_to_20100, conf_thresh)
+                    class_predict = classifier_predict(classifier,
+                                                       raw_100_to_20100,
+                                                       conf_thresh,
+                                                       classifier_name)
                     if class_predict == -1:
                         non_classified += 1
                     else:
