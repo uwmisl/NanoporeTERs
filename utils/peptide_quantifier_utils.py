@@ -451,7 +451,7 @@ def get_capture_freq(filtered_file, time_interval=None,
 def NTER_time_fit(time):
     if time == -1:
         return 0
-    conc = np.power(time / 20384, 1 / -0.96)
+    conc = np.power(time / 20384., 1 / -0.96)
     if conc < 0:
         return 0
     return conc
