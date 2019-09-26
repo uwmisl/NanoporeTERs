@@ -119,6 +119,8 @@ def filter_and_classify_peptides(runs, date, filter_name, classifier_name="",
     logger.addHandler(logging.StreamHandler())
 
     filter_param = get_filter_param(filter_name)
+    if custom_fname:
+        filter_param[10] = filter_param[10] + custom_fname + "_"
 
     logger.info("Params for " + filter_name + " Filter:")
     logger.info(print_param(filter_param))
@@ -229,8 +231,6 @@ def filter_and_classify_peptides(runs, date, filter_name, classifier_name="",
 
         # Save filtered captures. If classifier was enabled, each class is a
         # different file.
-        if custom_fname:
-            filter_param[10] = filter_param[10] + custom_fname + "_"
         for i, class_captures in enumerate(captures):
             if class_captures:
                 filtered_captures = pd.DataFrame(class_captures)
