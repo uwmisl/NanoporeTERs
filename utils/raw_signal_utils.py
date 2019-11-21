@@ -107,26 +107,16 @@ def get_sampling_rate(f5):
     raise ValueError("Cannot find sample rate.")
 
 
-def get_raw_signal(f5, path_type=None, channel=None, read=None):
-    # if channel is not None and read is not None:
-    #     raise ValueError("Only specify either read or channel.")
+def get_raw_signal(f5, channel=None):
     if channel is not None:
         channel_no = int(re.findall(r"(\d+)", channel)[0])
         signal_path = _raw_data_paths.get("channel-based") \
                                      .get("Signal") % channel_no
         raw = f5.get(signal_path).value
         return raw
-    else:  # if read is not None:
-        # read_no = int(re.findall(r"(\d+)", str(read))[0])
-        # signal_path = _raw_data_paths.get("read-based") \
-        #                              .get("Signal") % read_no
+    else:
         raw = f5.get("/Raw/Reads/").values()[0].get("Signal").value
         return raw
-    # else:
-    #     print "Channel is", channel
-    #     print "Read is", read
-    #     raise ValueError("Need to specify either read or channel, and it needs"
-    #                      " to match the internal file structure.")
 
 
 def determine_f5_format(f5):
@@ -160,8 +150,6 @@ def get_scale_metadata(f5, path_type=None, channel=None, read=None):
 
 def get_scaled_raw_for_channel(f5, channel=None, read=None):
     '''Note: using UK sp. of digitization for consistency w/ file format'''
-    # channel_data = f5.get("Raw").get(channel)
-    # raw = channel_data.get("Signal").value
     if channel is not None:
         path_type = "channel-based"
     else:
@@ -175,23 +163,6 @@ def get_scaled_raw_for_channel(f5, channel=None, read=None):
 def scale_raw_current(raw, offset, rng, digitisation):
     '''Note: using UK sp. of digitization for consistency w/ file format'''
     return (raw + offset) * (rng / digitisation)
-
-
-# def find_open_pore_current(raw, open_pore_guess, bound=None, quiet=True):
-#     if bound is None:
-#         bound = 0.1 * open_pore_guess
-#     in_range = []
-#     for obs in raw:
-#         if obs >= open_pore_guess - bound and obs <= open_pore_guess + bound:
-#             in_range.append(np.floor(obs))
-#     if len(in_range) == 0:
-#         if not quiet:
-#             print "No current within the range %d +/- %d." %
-#                   (open_pore_guess, bound)
-#         open_pore = None
-#     else:
-#         open_pore = np.median(in_range)
-#     return open_pore
 
 
 def find_open_pore_current(raw, open_pore_guess, bound=None):
@@ -437,7 +408,6 @@ def judge_channels(fast5_fname, plot_grid=False, cmap=None,
     if plot_grid:
         fig, ax = plt.subplots(figsize=(16, 32))
     for channel in channels:
-        # print channel
         i = int(re.findall(r'Channel_(\d+)', channel)[0])
         row_i = (i - 1) / ncols
         col_j = (i - 1) % ncols
@@ -477,17 +447,7 @@ def judge_channels(fast5_fname, plot_grid=False, cmap=None,
                 ax.text(col_j, row_i, str(i), va='center', ha='center',
                         color='white')
             continue
-
-        # Case X: The channel kicks up above open pore too often
-        # signal = np.delete(raw, off_points)
-        # kickup_regions = find_high_regions(signal, window_sz=1500, slide=100)
-        # if float(len(kickup_regions)) / len(signal) > 0.00002:
-        #     channel_grid[row_i, col_j] = 0.5
-        #     if plot_grid:
-        #         ax.text(col_j, row_i, str(i), va='center', ha='center',
-        #                 color='white')
-        #     continue        
-
+            
         # Case 4: The channel is assumed to be good
         channel_grid[row_i, col_j] = 1
         if plot_grid:
