@@ -38,9 +38,6 @@ def compute_fractional_blockage(scaled_raw, open_pore):
 
     scale_raw_current or get_scaled_raw_for_channel must be called first.
     '''
-    # scaled_raw = np.array(scaled_raw)
-    # f = np.vectorize(_calc_frac, otypes=[np.float])
-    # frac = f(scaled_raw, open_pore)
     scaled_raw = np.array(scaled_raw)
     f = np.vectorize(_calc_frac, otypes=[np.float])
     frac = f(scaled_raw, open_pore)
