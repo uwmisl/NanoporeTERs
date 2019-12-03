@@ -151,7 +151,7 @@ def get_scaled_raw_for_channel(f5, channel=None, read=None):
         path_type = "channel-based"
     else:
         path_type = "read-based"
-    raw = get_raw_signal(f5, path_type=path_type, channel=channel, read=read)
+    raw = get_raw_signal(f5, channel=channel)
     offset, rng, digi = get_scale_metadata(f5, path_type, channel=channel,
                                            read=read)
     return scale_raw_current(raw, offset, rng, digi)
