@@ -29,24 +29,10 @@ def natkey(string_):
 
 
 def compute_fractional_blockage(scaled_raw, open_pore):
-    '''Compute fractional blockage from the scaled raw data. Result is in the range
-    [0,1].
-
-    Compute the fraction of the pore that is "blocked" by the captured
-    sample, where 0 is a completely open pore and 1 is completely blocked (no
-    current can pass through the captured sample.
-
-    scale_raw_current or get_scaled_raw_for_channel must be called first.
-    '''
-    scaled_raw = np.array(scaled_raw)
-    f = np.vectorize(_calc_frac, otypes=[np.float])
-    frac = f(scaled_raw, open_pore)
-    return frac
-
-
-def _calc_frac(x, open_pore):
-    '''Helper fn for vectorizing fractional blockage calculations.'''
-    return min([1., max([0., 1. - x / open_pore])])
+    scaled_raw = np.array(scaled_raw, dtype=float)
+    scaled_raw /= open_pore
+    scaled_raw = np.clip(scaled_raw, a_max=1., a_min=0.)
+    return scaled_raw
 
 
 def get_fractional_blockage(f5, open_pore_guess=220, open_pore_bound=15,
