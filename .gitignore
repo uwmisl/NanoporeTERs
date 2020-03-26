@@ -104,3 +104,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Visual Studio code
+.vscode/
+
+# Nix 
+result 
+env
