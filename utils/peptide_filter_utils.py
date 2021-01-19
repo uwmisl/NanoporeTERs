@@ -246,7 +246,7 @@ def filter_and_classify_peptides(runs, date, filter_name, classifier_name="",
                     filtered_fname = "%s_segmented_peptides_filtered%s_rf_class%02d_%s.csv" % (date, filter_param[10], i, run)
                     filtered_fname = os.path.join(save_dir, filtered_fname)
                 else:
-                    filtered_fname = "%s_segmented_peptides_filtered%s_%s" % \
+                    filtered_fname = "%s_segmented_peptides_filtered%s_%s.csv" % \
                                      (date, filter_param[10], run)
                     filtered_fname = os.path.join(save_dir, filtered_fname)
                 logger.info("Saving to " + filtered_fname)
